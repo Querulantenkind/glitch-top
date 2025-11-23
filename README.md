@@ -1,75 +1,41 @@
-<div align="center">
+# GlitchTop
 
-<!-- HERO MODULE -->
-[![Stream](https://readme-typing-svg.herokuapp.com?font=Share+Tech+Mono&size=42&pause=1000&color=39FF14&center=true&vCenter=true&width=1000&lines=OPEN_SOURCE_ENTHUSIAST;CREATIVE_MIND_ONLINE;ARCHITECTING_THE_FUTURE)](https://git.io/typing-svg)
+> "System monitoring as performance art."
 
-<br><br>
+## 1. Project Overview
+**GlitchTop** is a system monitor (like `htop` or `btop`) that prioritizes aesthetics over precision. It visualizes system metrics (CPU, RAM, Net) as evolving, abstract Unicode patterns and "Matrix-like" digital rain, rather than bars and graphs.
 
-<!-- PHILOSOPHY MODULE -->
-<code>
-<b>[ SYSTEM_MANIFESTO ]</b><br>
-"Code is the brush, the screen is the canvas. <br>
-Building open systems that breathe, scale, and inspire."
-</code>
+## 2. Technical Architecture
 
-<br><br><br>
+### Tech Stack
+- **Language:** Python.
+- **UI Library:** `Rich` (for advanced terminal formatting) and `Live` display.
+- **System Data:** `psutil`.
 
-<!-- TECH STACK: EXPANDED 2x2 GRID -->
-<table width="100%" style="border: 0; border-collapse: collapse;">
-    <tr>
-        <td align="center" width="50%" style="border: 0; padding-bottom: 20px;">
-            <code><b>[ MODULE_01 :: LANGUAGES ]</b></code><br><br>
-            <img src="https://skillicons.dev/icons?i=rust,ts,python,go,js,html,css&theme=dark&perline=5" />
-        </td>
-        <td align="center" width="50%" style="border: 0; padding-bottom: 20px;">
-            <code><b>[ MODULE_02 :: FRAMEWORKS ]</b></code><br><br>
-            <img src="https://skillicons.dev/icons?i=react,nextjs,threejs,svelte,nodejs,express&theme=dark&perline=5" />
-        </td>
-    </tr>
-    <tr>
-        <td align="center" width="50%" style="border: 0;">
-            <code><b>[ MODULE_03 :: INFRA_OPS ]</b></code><br><br>
-            <img src="https://skillicons.dev/icons?i=docker,k8s,aws,linux,git,github,bash&theme=dark&perline=5" />
-        </td>
-        <td align="center" width="50%" style="border: 0;">
-            <code><b>[ MODULE_04 :: CREATIVE_LAB ]</b></code><br><br>
-            <img src="https://skillicons.dev/icons?i=figma,blender,photoshop,ai,md&theme=dark&perline=5" />
-        </td>
-    </tr>
-</table>
+### Visualization Logic
+- **Mapping:** Map 0-100% usage to index in a character array.
+  - Low load: `·`
+  - Medium load: `+`
+  - High load: `#`
+  - Critical: `█` (Red)
+- **Entropy:** Use `random` tailored by system load to determine "glitch" frequency. High CPU load = more visual corruption/noise in the display.
 
-<br><br>
+## 3. Implementation Roadmap (For AI Agent)
 
-<!-- STATS DASHBOARD (Wide Layout) -->
-<img src="https://github-readme-stats.vercel.app/api?username=[GITHUB_USERNAME]&show_icons=true&theme=radical&hide_border=true&bg_color=0d1117&count_private=true&include_all_commits=true&custom_title=GLOBAL_CONTRIBUTIONS" height="180" />
-<img src="https://github-readme-streak-stats.herokuapp.com/?user=[GITHUB_USERNAME]&theme=radical&hide_border=true&background=0d1117" height="180" />
+### Phase 1: Data Harvesting (`metrics.py`)
+- Function `get_cpu_matrix()`: Returns a list of values for each CPU core.
+- Function `get_memory_pressure()`: Returns float 0.0-1.0.
 
-<br><br>
+### Phase 2: The Renderer (`render.py`)
+- **The Grid:** Create a `Table` or `Layout` in Rich.
+- **The Algorithms:**
+  - *CPU View:* A grid of characters that updates 4x per second.
+  - *Memory View:* A "fluid" container where characters fill up from the bottom.
+- **The Glitch Effect:** Occasionally inject Zzalgo text or invert colors randomly if CPU > 80%.
 
-<!-- WORKFLOW PIPELINE -->
-```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#0d1117', 'primaryTextColor': '#39ff14', 'primaryBorderColor': '#ff00ff', 'lineColor': '#39ff14', 'secondaryColor': '#0d1117', 'tertiaryColor': '#0d1117'}}}%%
-graph LR
-    START((INIT)) -->|Imagine| A[CONCEPT]
-    A -->|Design| B{PROTOTYPE}
-    B -->|Iterate| B
-    B -->|Build| C[OPEN_SOURCE]
-    C -->|Deploy| D[GLOBAL_IMPACT]
-    D -->|Feedback| A
-    style START fill:#0d1117,stroke:#39ff14,stroke-width:2px
-    style A fill:#0d1117,stroke:#ff00ff,stroke-width:2px
-    style B fill:#0d1117,stroke:#39ff14,stroke-width:2px
-    style C fill:#0d1117,stroke:#ff00ff,stroke-width:2px
-    style D fill:#0d1117,stroke:#39ff14,stroke-width:2px
-```
+### Phase 3: Main Loop
+- Use `rich.live.Live` to refresh the screen without flickering.
+- Handle `KeyboardInterrupt` for graceful exit.
 
-<br><br>
-
-<!-- FOOTER -->
-<code>
-[ SYSTEM_STATUS: OPTIMAL ] • [ <a href="https://github.com/[GITHUB_USERNAME]">ESTABLISH_UPLINK</a> ] • [ END_OF_LINE ]
-</code>
-
-<!-- TEMPLATE_NOTE: Replace [GITHUB_USERNAME] with your actual GitHub username -->
-
-</div>
+## 4. Customization
+- Users can supply their own "Glyph Sets" (e.g., Runes, Braille, Japanese Katakana) via config.
