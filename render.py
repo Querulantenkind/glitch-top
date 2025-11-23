@@ -53,8 +53,12 @@ def apply_glitch_effect(text_obj: Text, intensity: float) -> Text:
     new_text = Text()
     
     for span in text_obj:
-        content = span.text
-        style = span.style
+        if isinstance(span, str): # Handle plain strings just in case
+            content = span
+            style = "none"
+        else:
+            content = span.text
+            style = span.style
         
         glitched_content = ""
         for char in content:
@@ -217,3 +221,90 @@ def generate_gpu_visual(gpu_data: Optional[Dict[str, Any]]) -> Panel:
     content.append(f"VRAM: {mem_used:.0f}/{mem_total:.0f} MiB ({mem_pct:.1f}%)", style=get_color(mem_pct))
     
     return Panel(content, title="GPU", border_style="green")
+
+def generate_temp_visual(temps: Dict[str, float]) -> Panel:
+    """
+    Generates a thermometer-style visual for temperatures.
+    """
+    content = Text()
+    
+    if not temps:
+        content.append("NO SENSORS", style="dim white")
+    else:
+        for sensor, temp in temps.items():
+            # Color gradient based on temperature
+            if temp < 50:
+                color = "blue"
+            elif temp < 70:
+                color = "green"
+            elif temp < 85:
+                color = "yellow"
+            else:
+                color = "red bold"
+            
+            # Simple bar visualization
+            bar_len = min(20, int((temp / 100.0) * 20))
+            bar = "█" * bar_len + "░" * (20 - bar_len)
+            
+            content.append(f"{sensor}: {temp:.1f}°C\n", style="white")
+            content.append(f"[{bar}]\n", style=color)
+            
+    return Panel(content, title="THERMALS", border_style="red")
+
+def generate_battery_visual(battery: Optional[Dict[str, Any]]) -> Panel:
+    """
+    Generates a battery visual.
+    """
+    if not battery:
+        return Panel(Text("NO BATTERY", style="dim white"), title="POWER", border_style="dim yellow")
+        
+    percent = battery["percent"]
+    plugged = battery["plugged"]
+    
+    # Battery icon construction
+    width = 10
+    filled = int((percent / 100.0) * width)
+    
+    bar_color = "green" if percent > 20 else "red"
+    if plugged:
+        bar_color = "yellow"
+        status_icon = "⚡"
+    else:
+        status_icon = " "
+        
+    bar = "█" * filled + " " * (width - filled)
+    
+    content = Text()
+    content.append(f"[{bar}] {percent}%\n", style=bar_color)
+    content.append(f"STATUS: {'CHARGING' if plugged else 'DISCHARGING'} {status_icon}", style="white")
+    
+    return Panel(content, title="POWER", border_style="yellow")
+
+def generate_entropy_stream(width: int, height: int, intensity: float) -> Panel:
+    """
+    Generates a scrolling stream of hex values / digital rain.
+    Intensity (0-1) controls density and character set.
+    """
+    chars = "01"
+    if intensity > 0.3: chars += "23456789"
+    if intensity > 0.6: chars += "ABCDEF"
+    if intensity > 0.8: chars += "@#&§"
+    
+    lines = []
+    for _ in range(height):
+        line = ""
+        for _ in range(width):
+            if random.random() < (0.1 + intensity * 0.5):
+                line += random.choice(chars)
+            else:
+                line += " "
+        
+        # Color based on intensity
+        color = "green"
+        if intensity > 0.8: color = "red"
+        elif intensity > 0.5: color = "yellow"
+            
+        lines.append(Text(line, style=color))
+        
+    content = Text("\n").join(lines)
+    return Panel(content, title="ENTROPY_STREAM", border_style="dim green")

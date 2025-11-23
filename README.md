@@ -27,6 +27,8 @@
 - **GPU Stats:** Real-time NVIDIA GPU utilization and memory monitoring (requires `nvidia-smi`).
 - **Process List:** Top processes by CPU usage in a glitchy table.
 - **Network Stats:** Real-time upload/download tracking with sparkline history graph.
+- **Thermals & Power:** CPU temperature monitoring and battery status (with charging indicator).
+- **Entropy Stream:** A visual "Matrix rain" representing system load intensity.
 - **Cyber Mode:** Auto-cycling aesthetic themes and high-intensity visuals.
 
 

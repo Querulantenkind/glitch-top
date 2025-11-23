@@ -2,7 +2,7 @@ import psutil
 import shutil
 import subprocess
 import xml.etree.ElementTree as ET
-from typing import List, Tuple, Dict, Any
+from typing import List, Tuple, Dict, Any, Optional
 
 def get_cpu_matrix() -> List[float]:
     """
@@ -87,8 +87,48 @@ def get_gpu_stats() -> Dict[str, Any]:
         except Exception:
             pass
             
-    # Mock return for development if no GPU found, or just return empty
-    # For the sake of the user seeing the feature working without a GPU, I'll return None 
-    # and handle the None in render.py (or mock if requested, but plan said "mock if hardware unavailable" 
-    # under Verification, but maybe I should just return None here and let render handle it cleanly)
+    return None
+
+def get_temperatures() -> Dict[str, float]:
+    """
+    Returns a dictionary of critical temperatures (e.g. CPU package).
+    Keys are sensor names, values are temperatures in Celsius.
+    """
+    temps = {}
+    if not hasattr(psutil, "sensors_temperatures"):
+        return temps
+        
+    sensor_data = psutil.sensors_temperatures()
+    if not sensor_data:
+        return temps
+
+    # Common sensor names for CPU
+    cpu_labels = ['coretemp', 'k10temp', 'cpu_thermal', 'cpu']
+    
+    for label in cpu_labels:
+        if label in sensor_data:
+            entries = sensor_data[label]
+            # Average if multiple cores/entries
+            if entries:
+                avg_temp = sum(e.current for e in entries) / len(entries)
+                temps['CPU'] = avg_temp
+            break
+            
+    # Maybe add others like NVME later if needed
+    return temps
+
+def get_battery_status() -> Optional[Dict[str, Any]]:
+    """
+    Returns battery status: percent, power_plugged, secsleft.
+    """
+    if not hasattr(psutil, "sensors_battery"):
+        return None
+        
+    batt = psutil.sensors_battery()
+    if batt:
+        return {
+            "percent": batt.percent,
+            "plugged": batt.power_plugged,
+            "secsleft": batt.secsleft
+        }
     return None

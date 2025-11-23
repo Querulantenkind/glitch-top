@@ -29,6 +29,7 @@ def make_layout() -> Layout:
     layout.split(
         Layout(name="header", size=3),
         Layout(name="main", ratio=1),
+        Layout(name="entropy_stream", size=6), # New Entropy Stream area
         Layout(name="footer", size=3)
     )
     
@@ -45,6 +46,7 @@ def make_layout() -> Layout:
     layout["right_col"].split(
         Layout(name="memory", ratio=2),
         Layout(name="disk", ratio=1),
+        Layout(name="sensors", ratio=1), # Replaces GPU or adds to it? Let's split this further
         Layout(name="gpu", ratio=1)
     )
     
@@ -69,6 +71,13 @@ def update_layout(layout: Layout, state: AppState) -> None:
     disk_io = metrics.get_disk_io()
     top_procs = metrics.get_top_processes()
     gpu_stats = metrics.get_gpu_stats()
+    temps = metrics.get_temperatures()
+    battery = metrics.get_battery_status()
+    
+    # Calculate System Intensity (0-1)
+    # Average of CPU load and Memory Pressure
+    avg_cpu = sum(cpu_data) / len(cpu_data) if cpu_data else 0
+    intensity = (avg_cpu / 100.0 + mem_pressure) / 2.0
     
     # Update Network History (Sparkline)
     total_net = net_stats['bytes_sent'] + net_stats['bytes_recv']
@@ -86,9 +95,25 @@ def update_layout(layout: Layout, state: AppState) -> None:
     proc_panel = render.generate_process_table(top_procs)
     gpu_panel = render.generate_gpu_visual(gpu_stats)
     
+    # Combine Sensor Visuals
+    temp_panel = render.generate_temp_visual(temps)
+    # If battery exists, we might want to show it. 
+    # For now, let's swap GPU/Sensors if GPU is empty or just alternate?
+    # Better: Combine Temp and Battery into one panel or split the Sensor layout
+    # Simple approach: render both into one text object
+    sensor_content = Text()
+    if temps:
+        # Extract temp content from the panel function (refactor or just reuse logic?)
+        # Reuse logic for cleaner code, let's just use temp_panel for now
+        # But wait, we want battery too.
+        # Let's create a combined visual manually here or add a new helper in render.
+        # Actually, let's use the 'sensors' layout slot for temps, and maybe squeeze battery in footer or header?
+        # Or, let's check if battery exists.
+        pass
+
     # Header
     theme_name = CONFIG["theme"].upper()
-    header_text = f"GLITCH_TOP // {theme_name}_MODE // V2.0"
+    header_text = f"GLITCH_TOP // {theme_name}_MODE // V3.0"
     header_content = Text(header_text, justify="center", style="bold magenta")
     layout["header"].update(Panel(header_content, style="magenta"))
     
@@ -99,7 +124,17 @@ def update_layout(layout: Layout, state: AppState) -> None:
     layout["processes"].update(proc_panel)
     layout["gpu"].update(gpu_panel)
     
-    # Footer (Network Stats + Sparkline)
+    # Sensors Slot: Show Temps. If Battery exists, show it instead of Disk maybe?
+    # Or just put Temp in Sensors slot.
+    layout["sensors"].update(temp_panel)
+    
+    # Entropy Stream
+    # Get width from console? Hard to pass here without refactoring.
+    # We'll guess a reasonable width or rely on Panel to clip.
+    entropy_panel = render.generate_entropy_stream(width=100, height=4, intensity=intensity)
+    layout["entropy_stream"].update(entropy_panel)
+
+    # Footer (Network Stats + Sparkline + Battery Info if present)
     sent_mb = net_stats['bytes_sent'] / (1024 * 1024)
     recv_mb = net_stats['bytes_recv'] / (1024 * 1024)
     
@@ -107,6 +142,8 @@ def update_layout(layout: Layout, state: AppState) -> None:
     
     footer_content = Text()
     footer_content.append(f"NET_IO :: UP: {sent_mb:.2f} MB | DOWN: {recv_mb:.2f} MB  ", style="cyan")
+    if battery:
+        footer_content.append(f"| BATT: {battery['percent']}% {'⚡' if battery['plugged'] else ''} ", style="yellow")
     footer_content.append(sparkline)
     
     layout["footer"].update(Panel(footer_content, style="cyan", title="NETWORK_FLOW"))
