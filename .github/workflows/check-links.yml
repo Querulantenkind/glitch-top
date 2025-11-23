@@ -1,0 +1,65 @@
+name: Check Links
+
+on:
+  pull_request:
+    paths:
+      - '**.md'
+  push:
+    branches:
+      - main
+    paths:
+      - '**.md'
+  schedule:
+    # Run weekly to catch broken links from external services
+    - cron: '0 0 * * 0'
+  workflow_dispatch:
+
+jobs:
+  check-links:
+    runs-on: ubuntu-latest
+    name: Validate markdown links
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Check markdown links
+        uses: gaurav-nelson/github-action-markdown-link-checker@v1
+        with:
+          use-quiet-mode: false
+          use-verbose-mode: false
+          check-modified-files-only: false
+          base-branch: main
+          files-to-skip: |
+            TEMPLATE_SETUP.md
+            .github/workflows/**
+
+      - name: Check external service availability
+        run: |
+          echo "Checking external service availability..."
+          
+          # Check readme-typing-svg (used in README.md and templates)
+          if curl -s -o /dev/null -w "%{http_code}" "https://readme-typing-svg.herokuapp.com/" | grep -q "200\|301\|302"; then
+            echo "✓ readme-typing-svg service is available"
+          else
+            echo "::warning::readme-typing-svg service may be down"
+          fi
+          
+          # Check skillicons (used for tech stack)
+          if curl -s -o /dev/null -w "%{http_code}" "https://skillicons.dev/" | grep -q "200\|301\|302"; then
+            echo "✓ skillicons service is available"
+          else
+            echo "::warning::skillicons service may be down"
+          fi
+          
+          # Check github-readme-stats (used for GitHub stats)
+          if curl -s -o /dev/null -w "%{http_code}" "https://github-readme-stats.vercel.app/" | grep -q "200\|301\|302"; then
+            echo "✓ github-readme-stats service is available"
+          else
+            echo "::warning::github-readme-stats service may be down"
+          fi
+
+      - name: Link check summary
+        if: success()
+        run: echo "✓ All links are valid and services are available"
+

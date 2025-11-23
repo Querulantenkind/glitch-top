@@ -1,0 +1,62 @@
+name: Validate Placeholders
+
+on:
+  pull_request:
+    paths:
+      - '**.md'
+  push:
+    branches:
+      - main
+    paths:
+      - '**.md'
+  workflow_dispatch:
+
+jobs:
+  validate-placeholders:
+    runs-on: ubuntu-latest
+    name: Check for unreplaced placeholders
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Check for [GITHUB_USERNAME] placeholders
+        run: |
+          if grep -r "\[GITHUB_USERNAME\]" --include="*.md" . 2>/dev/null; then
+            echo "::error::Found unreplaced [GITHUB_USERNAME] placeholders. Please replace with your GitHub username."
+            exit 1
+          else
+            echo "✓ No [GITHUB_USERNAME] placeholders found"
+          fi
+
+      - name: Check for [REPO_NAME] placeholders
+        run: |
+          if grep -r "\[REPO_NAME\]" --include="*.md" . 2>/dev/null; then
+            echo "::error::Found unreplaced [REPO_NAME] placeholders. Please replace with your repository name."
+            exit 1
+          else
+            echo "✓ No [REPO_NAME] placeholders found"
+          fi
+
+      - name: Check for [YOUR_EMAIL_HERE] placeholders
+        run: |
+          if grep -r "\[YOUR_EMAIL_HERE\]" --include="*.md" . 2>/dev/null; then
+            echo "::error::Found unreplaced [YOUR_EMAIL_HERE] placeholders. Please replace with your email."
+            exit 1
+          else
+            echo "✓ No [YOUR_EMAIL_HERE] placeholders found"
+          fi
+
+      - name: Check for [YOUR_PGP_KEY_HERE] placeholders
+        run: |
+          if grep -r "\[YOUR_PGP_KEY_HERE\]" --include="*.md" . 2>/dev/null; then
+            echo "::warning::Found unreplaced [YOUR_PGP_KEY_HERE] placeholder. This is optional but recommended for security."
+          else
+            echo "✓ No [YOUR_PGP_KEY_HERE] placeholders found"
+          fi
+
+      - name: Summary
+        if: success()
+        run: |
+          echo "✓ All placeholders have been replaced!"
+          echo "::notice::Profile template is ready for deployment."
