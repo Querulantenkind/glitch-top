@@ -26,6 +26,12 @@ THEMES = {
         "med": "⠶",
         "high": "⣿",
         "critical": "█"
+    },
+    "cyber": {
+        "low": "░",
+        "med": "▒",
+        "high": "▓",
+        "critical": "█"
     }
 }
 
@@ -34,5 +40,7 @@ CONFIG = {
     "theme": "standard",
     "glitch_enabled": True,
     "glitch_threshold": 80.0,  # CPU percentage to start glitching heavily
+    "cyber_mode": False,
+    "theme_cycle_enabled": True,
+    "theme_cycle_interval": 10.0, # Seconds
 }
-

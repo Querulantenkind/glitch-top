@@ -24,8 +24,10 @@
 - **CPU Grid:** Visualizes per-core usage with glyphs.
 - **Memory Fluid:** A "fluid" container filling with usage.
 - **Disk I/O:** Monitors read/write bytes.
+- **GPU Stats:** Real-time NVIDIA GPU utilization and memory monitoring (requires `nvidia-smi`).
 - **Process List:** Top processes by CPU usage in a glitchy table.
-- **Network Stats:** Real-time upload/download tracking.
+- **Network Stats:** Real-time upload/download tracking with sparkline history graph.
+- **Cyber Mode:** Auto-cycling aesthetic themes and high-intensity visuals.
 
 
 ## 4. Customization

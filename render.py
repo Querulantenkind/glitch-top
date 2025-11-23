@@ -1,5 +1,5 @@
 import random
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 from rich.text import Text
 from rich.panel import Panel
 from rich.table import Table
@@ -175,3 +175,45 @@ def generate_process_table(processes: List[Dict[str, Any]]) -> Panel:
         )
         
     return Panel(table, title="TOP PROCS", border_style="magenta")
+
+def generate_net_sparkline(history: List[float]) -> Text:
+    """
+    Generates a sparkline graph for network activity.
+    History should be a list of values (normalized or raw).
+    """
+    if not history:
+        return Text("")
+        
+    spark_chars = "⠀⡀⣀⣄⣤⣦⣶⣷⣿"
+    max_val = max(history) if max(history) > 0 else 1
+    
+    sparkline = ""
+    for val in history:
+        # Normalize to 0-8 index
+        idx = int((val / max_val) * (len(spark_chars) - 1))
+        sparkline += spark_chars[idx]
+        
+    return Text(sparkline, style="cyan")
+
+def generate_gpu_visual(gpu_data: Optional[Dict[str, Any]]) -> Panel:
+    """
+    Generates a visual for GPU stats.
+    """
+    if not gpu_data:
+        return Panel(Text("NO GPU DETECTED", style="dim white"), title="GPU", border_style="dim red")
+        
+    util = gpu_data['utilization']
+    mem_used = gpu_data['memory_used']
+    mem_total = gpu_data['memory_total']
+    
+    content = Text()
+    content.append(f"{gpu_data.get('name', 'GPU')}\n", style="bold white")
+    
+    glyph = get_glyph(util)
+    color = get_color(util)
+    content.append(f"UTIL: {util:.1f}% {glyph * 5}\n", style=color)
+    
+    mem_pct = (mem_used / mem_total) * 100 if mem_total > 0 else 0
+    content.append(f"VRAM: {mem_used:.0f}/{mem_total:.0f} MiB ({mem_pct:.1f}%)", style=get_color(mem_pct))
+    
+    return Panel(content, title="GPU", border_style="green")

@@ -1,5 +1,6 @@
 import time
 import sys
+import collections
 from rich.live import Live
 from rich.layout import Layout
 from rich.console import Console
@@ -8,6 +9,16 @@ from rich.text import Text
 
 import metrics
 import render
+from config import CONFIG, THEMES
+
+# State for history and theme cycling
+class AppState:
+    def __init__(self):
+        self.net_history = collections.deque(maxlen=40)
+        self.last_net_bytes = 0
+        self.last_theme_switch = time.time()
+        self.themes = list(THEMES.keys())
+        self.current_theme_idx = 0
 
 def make_layout() -> Layout:
     """
@@ -33,30 +44,52 @@ def make_layout() -> Layout:
     
     layout["right_col"].split(
         Layout(name="memory", ratio=2),
-        Layout(name="disk", ratio=1)
+        Layout(name="disk", ratio=1),
+        Layout(name="gpu", ratio=1)
     )
     
     return layout
 
-def update_layout(layout: Layout) -> None:
+def update_layout(layout: Layout, state: AppState) -> None:
     """
     Fetch metrics and update the layout renderables.
     """
+    # Theme Cycling Logic
+    if CONFIG["theme_cycle_enabled"]:
+        now = time.time()
+        if now - state.last_theme_switch > CONFIG["theme_cycle_interval"]:
+            state.current_theme_idx = (state.current_theme_idx + 1) % len(state.themes)
+            CONFIG["theme"] = state.themes[state.current_theme_idx]
+            state.last_theme_switch = now
+    
     # Get Data
     cpu_data = metrics.get_cpu_matrix()
     mem_pressure = metrics.get_memory_pressure()
     net_stats = metrics.get_network_stats()
     disk_io = metrics.get_disk_io()
     top_procs = metrics.get_top_processes()
+    gpu_stats = metrics.get_gpu_stats()
+    
+    # Update Network History (Sparkline)
+    total_net = net_stats['bytes_sent'] + net_stats['bytes_recv']
+    if state.last_net_bytes > 0:
+        diff = total_net - state.last_net_bytes
+        state.net_history.append(diff)
+    else:
+        state.net_history.append(0)
+    state.last_net_bytes = total_net
     
     # Generate Visuals
     cpu_panel = render.generate_cpu_visual(cpu_data)
     mem_panel = render.generate_memory_visual(mem_pressure)
     disk_panel = render.generate_disk_visual(disk_io)
     proc_panel = render.generate_process_table(top_procs)
+    gpu_panel = render.generate_gpu_visual(gpu_stats)
     
     # Header
-    header_content = Text("GLITCH_TOP // SYSTEM_MONITOR_V1.1", justify="center", style="bold magenta")
+    theme_name = CONFIG["theme"].upper()
+    header_text = f"GLITCH_TOP // {theme_name}_MODE // V2.0"
+    header_content = Text(header_text, justify="center", style="bold magenta")
     layout["header"].update(Panel(header_content, style="magenta"))
     
     # Body
@@ -64,21 +97,29 @@ def update_layout(layout: Layout) -> None:
     layout["memory"].update(mem_panel)
     layout["disk"].update(disk_panel)
     layout["processes"].update(proc_panel)
+    layout["gpu"].update(gpu_panel)
     
-    # Footer (Network Stats)
+    # Footer (Network Stats + Sparkline)
     sent_mb = net_stats['bytes_sent'] / (1024 * 1024)
     recv_mb = net_stats['bytes_recv'] / (1024 * 1024)
-    footer_text = f"NET_IO :: UP: {sent_mb:.2f} MB | DOWN: {recv_mb:.2f} MB"
-    layout["footer"].update(Panel(Text(footer_text, justify="right"), style="cyan"))
+    
+    sparkline = render.generate_net_sparkline(list(state.net_history))
+    
+    footer_content = Text()
+    footer_content.append(f"NET_IO :: UP: {sent_mb:.2f} MB | DOWN: {recv_mb:.2f} MB  ", style="cyan")
+    footer_content.append(sparkline)
+    
+    layout["footer"].update(Panel(footer_content, style="cyan", title="NETWORK_FLOW"))
 
 def main():
     console = Console()
     layout = make_layout()
+    state = AppState()
     
     try:
         with Live(layout, refresh_per_second=4, screen=True) as live:
             while True:
-                update_layout(layout)
+                update_layout(layout, state)
                 time.sleep(0.25)
     except KeyboardInterrupt:
         console.print("[bold red]SYSTEM HALTED BY USER[/bold red]")
